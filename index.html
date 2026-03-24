@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LexAnalyzer — Lexical Analyzer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===== Navbar ===== -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="logo">
+        <div class="logo-icon">LA</div>
+        LexAnalyzer
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html" class="active">Analyzer</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ===== Hero ===== -->
+  <section class="hero">
+    <h1>Lexical Analysis<br>Made Simple</h1>
+    <p>Paste any French text and instantly identify words by their lexical patterns — uppercase starts, <em>-er</em> endings, and <em>j-</em> prefixes.</p>
+    <div class="hero-badges">
+      <span class="badge badge-light">&#x26A1; Real-time</span>
+      <span class="badge badge-accent">Flex / Lex rules</span>
+      <span class="badge badge-success">French text</span>
+    </div>
+  </section>
+
+  <!-- ===== Main Analyzer ===== -->
+  <section class="section">
+    <div class="container">
+
+      <!-- Stats Row -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="statCapital">0</div>
+          <div class="stat-label">Uppercase starts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statEr">0</div>
+          <div class="stat-label">Ends with -er</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statJ">0</div>
+          <div class="stat-label">Starts with j</div>
+        </div>
+      </div>
+
+      <!-- Analyzer Grid -->
+      <div class="analyzer-grid">
+
+        <!-- Input -->
+        <div class="card">
+          <div class="card-header">
+            <h3>&#x1F4DD; Input Text</h3>
+            <button class="btn btn-sm btn-secondary" id="btnClear">Clear</button>
+          </div>
+          <div class="card-body">
+            <textarea
+              id="inputText"
+              placeholder="Paste your French text here…&#10;&#10;Example:&#10;En nuit, manger Et marcher.&#10;En jour, manger et aller dormir."
+            ></textarea>
+            <div class="btn-group">
+              <button class="btn btn-primary" id="btnAnalyze">&#x1F50D; Analyze</button>
+              <button class="btn btn-outline" id="btnSample">Load sample</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Output -->
+        <div class="card">
+          <div class="card-header">
+            <h3>&#x1F4CA; Results</h3>
+            <span id="resultCount" style="font-size:.8rem;color:var(--gray-400);">0 matches</span>
+          </div>
+          <div class="card-body">
+            <ul class="results-list" id="resultsList">
+              <li class="result-item type-empty">
+                <span>Results will appear here after analysis.</span>
+              </li>
+            </ul>
+          </div>
+          <div class="legend">
+            <span class="legend-item">
+              <span class="legend-dot" style="background:var(--primary)"></span> Uppercase start
+            </span>
+            <span class="legend-item">
+              <span class="legend-dot" style="background:var(--success)"></span> Ends with -er
+            </span>
+            <span class="legend-item">
+              <span class="legend-dot" style="background:var(--warning)"></span> Starts with j
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== Rules Section ===== -->
+  <section class="section" style="background:var(--gray-100); border-top:1px solid var(--gray-200);">
+    <div class="container">
+      <h2 class="section-title">Lexical Rules</h2>
+      <p class="section-sub">Rules derived from the Flex/Lex grammar file <code>TP2.l</code></p>
+
+      <div class="rules-grid">
+        <div class="rule-card">
+          <h4>&#x1F1E6; Uppercase Starts</h4>
+          <p>Any word that begins with an uppercase letter (A–Z) followed by any mix of upper and lowercase letters.</p>
+          <code class="rule-code">[A-Z][A-Za-z]*</code>
+        </div>
+        <div class="rule-card">
+          <h4>&#x1F51A; Ends with <em>-er</em></h4>
+          <p>Any word composed of letters that ends with the suffix <strong>er</strong>.</p>
+          <code class="rule-code">[A-Za-z]*er</code>
+        </div>
+        <div class="rule-card">
+          <h4>&#x1F1EF; Starts with <em>j</em></h4>
+          <p>Any word beginning with the lowercase letter <strong>j</strong> followed by any letters.</p>
+          <code class="rule-code">j[A-Za-z]*</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer class="footer">
+    <p>LexAnalyzer &mdash; built with pure HTML &amp; CSS &middot; Flex/Lex rules from <a href="#">TP2.l</a></p>
+  </footer>
+
+  <script>
+    const SAMPLE = `En nuit, manger Et marcher.\nEn jour, manger et aller dormir.`;
+
+    const inputEl   = document.getElementById('inputText');
+    const listEl    = document.getElementById('resultsList');
+    const countEl   = document.getElementById('resultCount');
+    const statCap   = document.getElementById('statCapital');
+    const statEr    = document.getElementById('statEr');
+    const statJ     = document.getElementById('statJ');
+
+    document.getElementById('btnSample').addEventListener('click', () => {
+      inputEl.value = SAMPLE;
+    });
+
+    document.getElementById('btnClear').addEventListener('click', () => {
+      inputEl.value = '';
+      renderEmpty();
+    });
+
+    document.getElementById('btnAnalyze').addEventListener('click', analyze);
+
+    function analyze() {
+      const text = inputEl.value.trim();
+      if (!text) { renderEmpty(); return; }
+
+      const tokens = text.match(/[A-Za-zÀ-ÿ]+/g) || [];
+      const results = [];
+
+      tokens.forEach(word => {
+        if (/^[A-Z]/.test(word))              results.push({ word, type: 'capital', label: 'Uppercase start' });
+        if (/er$/i.test(word))                results.push({ word, type: 'er',      label: 'Ends with -er'  });
+        if (/^j/.test(word))                  results.push({ word, type: 'j',       label: 'Starts with j'  });
+      });
+
+      const caps = results.filter(r => r.type === 'capital').length;
+      const ers  = results.filter(r => r.type === 'er').length;
+      const js   = results.filter(r => r.type === 'j').length;
+
+      statCap.textContent = caps;
+      statEr.textContent  = ers;
+      statJ.textContent   = js;
+      countEl.textContent = results.length + ' match' + (results.length !== 1 ? 'es' : '');
+
+      listEl.innerHTML = '';
+
+      if (!results.length) {
+        listEl.innerHTML = '<li class="result-item type-empty"><span>No matches found.</span></li>';
+        return;
+      }
+
+      results.forEach(({ word, type, label }, i) => {
+        const li = document.createElement('li');
+        li.className = `result-item type-${type}`;
+        li.style.animationDelay = (i * 30) + 'ms';
+        li.innerHTML = `<span class="result-dot"></span>
+          <span><strong>${word}</strong> &mdash; ${label}</span>`;
+        listEl.appendChild(li);
+      });
+    }
+
+    function renderEmpty() {
+      statCap.textContent = statEr.textContent = statJ.textContent = '0';
+      countEl.textContent = '0 matches';
+      listEl.innerHTML = '<li class="result-item type-empty"><span>Results will appear here after analysis.</span></li>';
+    }
+  </script>
+</body>
+</html>
